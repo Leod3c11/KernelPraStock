@@ -344,6 +344,47 @@ config EXYNOS_MIF_PROFILER
 	help
 	Support MIF Profiler for Exynos SoC.
 
+config SOC_EXYNOS9830_UNDERVOLT
+	bool "Undervolting support for EXYNOS9830 SoC"
+	depends on SOC_EXYNOS9830
+	help
+	  Allows to undervolt the EXYNOS 9830 SoC via setting a percentage.
+
+config SOC_EXYNOS9830_CL0_UV
+	int "Undervolting percentage for cluster 0 of EXYNOS9830 (little cluster)"
+	range 0 100
+	depends on SOC_EXYNOS9830_UNDERVOLT
+	default 0
+	help
+	  Percentage to undervolt the little cluster of the EXYNOS 9830 SoC.
+	  Set a value between 0 and 100.
+
+config SOC_EXYNOS9830_CL1_UV
+	int "Undervolting percentage for cluster 1 of EXYNOS9830 (big cluster)"
+	range 0 100
+	depends on SOC_EXYNOS9830_UNDERVOLT
+	default 0
+	help
+	  Percentage to undervolt the big cluster of the EXYNOS 9830 SoC.
+	  Set a value between 0 and 100.
+
+config SOC_EXYNOS9830_CL2_UV
+	int "Undervolting percentage for cluster 2 of EXYNOS9830 (prime cluster)"
+	range 0 100
+	depends on SOC_EXYNOS9830_UNDERVOLT
+	default 0
+	help
+	  Percentage to undervolt the prime cluster of the EXYNOS 9830 SoC.
+	  Set a value between 0 and 100.
+
+config SOC_EXYNOS9830_GPU_UV
+	int "Undervolting percentage for GPU of EXYNOS9830"
+	range 0 100
+	depends on SOC_EXYNOS9830_UNDERVOLT
+	default 0
+	help
+	  Percentage to undervolt the GPU of the EXYNOS 9830 SoC.
+	  Set a value between 0 and 100.
 
 source "drivers/soc/samsung/exynos_cpu_perf/Kconfig"
 
