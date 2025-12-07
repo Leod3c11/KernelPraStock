@@ -11,6 +11,7 @@
 #include "cmucal.h"
 #include "vclk.h"
 #include "ra.h"
+#include <linux/string.h>
 
 #define FVMAP_SIZE		(SZ_8K)
 #define STEP_UV			(6250)
@@ -579,6 +580,15 @@ static const struct attribute_group asv_g_spec_grp = {
 #endif
 #endif /* CONFIG_SEC_FACTORY */
 
+#ifdef CONFIG_SOC_EXYNOS9830_UNDERVOLT
+// Define domain IDs for undervolting
+#define EXYNOS9830_DOMAIN_ID_CPUCL0 3 	// Set domain_id for CPUCL0 here.
+#define EXYNOS9830_DOMAIN_ID_CPUCL1 16 	// Set domain_id for CPUCL1 here.
+#define EXYNOS9830_DOMAIN_ID_CPUCL2 2 	// Set domain_id for CPUCL2 here.
+#define EXYNOS9830_DOMAIN_ID_G3D 4 	// Set domain_id for GPU (G3D)
+#define EXYNOS9830_DOMAIN_ID_INTG3D 8 	// Set domain_id for GPU (INTG3D)
+#endif
+
 static void fvmap_copy_from_sram(void __iomem *map_base, void __iomem *sram_base)
 {
 	volatile struct fvmap_header *fvmap_header, *header;
@@ -663,8 +673,55 @@ static void fvmap_copy_from_sram(void __iomem *map_base, void __iomem *sram_base
 					new->table[j].rate, new->table[j].volt,
 					volt_offset_percent);
 		}
-	}
-}
+
+#ifdef CONFIG_SOC_EXYNOS9830_UNDERVOLT
+/* Correção: Movido o bloco de undervolt para DENTRO do loop 'for (i = 0; i < size; i++)'
+   para que 'vclk' e 'old' estejam no escopo correto. */
+#if CONFIG_SOC_EXYNOS9830_CL0_UV != 0
+				/* Apply undervolt if the domain is CPUCL0 */
+				if (vclk && strcmp(vclk->name, "CPUCL0") == 0) {
+					for (j = 0; j < fvmap_header[i].num_of_lv; j++) {
+						old->table[j].volt = (old->table[j].volt * (100 - CONFIG_SOC_EXYNOS9830_CL0_UV)) / 100;
+					}
+				}
+#endif
+
+#if CONFIG_SOC_EXYNOS9830_CL1_UV != 0
+				/* Apply undervolt if the domain is CPUCL1 */
+				if (vclk && strcmp(vclk->name, "CPUCL1") == 0) {
+					for (j = 0; j < fvmap_header[i].num_of_lv; j++) {
+				if (old->table[j].rate == 2704000 || old->table[j].rate == 2600000)
+#if CONFIG_SOC_EXYNOS9830_CL1_UV_OC != 0
+					old->table[j].volt = (old->table[j].volt * (100 - CONFIG_SOC_EXYNOS9830_CL1_UV_OC)) / 100;
+#else
+					old->table[j].volt = (old->table[j].volt * (100 - CONFIG_SOC_EXYNOS9830_CL1_UV)) / 100;
+#endif
+				else
+					old->table[j].volt = (old->table[j].volt * (100 - CONFIG_SOC_EXYNOS9830_CL1_UV)) / 100;
+					}
+				}
+#endif
+
+#if CONFIG_SOC_EXYNOS9830_CL2_UV != 0
+				/* Apply undervolt if the domain is CPUCL2 */
+				if (vclk && strcmp(vclk->name, "CPUCL2") == 0) {
+					for (j = 0; j < fvmap_header[i].num_of_lv; j++) {
+						old->table[j].volt = (old->table[j].volt * (100 - CONFIG_SOC_EXYNOS9830_CL2_UV)) / 100;
+					}
+				}
+#endif
+
+#if CONFIG_SOC_EXYNOS9830_GPU_UV != 0
+				/* Apply undervolt if the domain is G3D or INTG3D */
+				if (vclk && (strcmp(vclk->name, "G3D") == 0 || strcmp(vclk->name, "intg3d") == 0)) {
+					for (j = 0; j < fvmap_header[i].num_of_lv; j++) {
+						old->table[j].volt = (old->table[j].volt * (100 - CONFIG_SOC_EXYNOS9830_GPU_UV)) / 100;
+					}
+				}
+#endif
+#endif
+	} // Fim do loop for (i = 0; i < size; i++)
+} // Fim da função fvmap_copy_from_sram
 
 int fvmap_init(void __iomem *sram_base)
 {
@@ -699,3 +756,4 @@ int fvmap_init(void __iomem *sram_base)
 
 	return 0;
 }
+/* Correção: Removida a chave '}' extra que estava aqui. */
